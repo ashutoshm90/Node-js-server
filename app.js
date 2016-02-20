@@ -6,6 +6,7 @@ var bodyParser = require('body-parser');
 var db = require('./db.js')
 var app = express();
 var _ = require('underscore');
+var bcrypt = require('bcrypt-nodejs');
 var PORT = process.env.PORT || 3000;
 var todoNextId = 1;
 app.use(bodyParser.json());
@@ -181,9 +182,35 @@ app.post('/users', function(req,res){
     });
 });
 
+app.post('/users/login', function(req,res){
+   var body = _.pick(req.body, 'email', 'password');
+
+    db.user.authenciate(body).then(function(user){
+        res.header('Auth', user.generateToken('authentication')).json(user.toPublicJSON());
+    },function(){
+        res.status(401).send();
+    });
+    //if(typeof body.email !== 'string' || typeof body.password !== 'string'){
+    //    return res.status(400).send();
+    //}
+    //db.user.findOne({
+    //    where: {
+    //        email: body.email
+    //    }
+    //}).then(function(user){
+    //    if(!user || !bcrypt.compareSync(body.password, user.get('password_hash'))){
+    //        return res.status(401).send();
+    //    }
+    //
+    //    res.json(user.toPublicJSON());
+    //},function(e){
+    //    return res.status(500).send();
+    //});
+});
+
 app.use(express.static(__dirname + '/public'));
 
-db.sequelize.sync().
+db.sequelize.sync({force: true}).
     then(function(){
         app.listen(PORT, function(){
             console.log("APP using on " + PORT);
